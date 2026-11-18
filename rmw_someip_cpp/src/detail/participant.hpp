@@ -50,7 +50,7 @@ inline rmw_gid_t make_entity_gid(uint16_t instance_id, uint16_t entity_id)
 
 /// This ROS process's identity on SOME/IP.
 ///
-/// The ID model (docs/design.md §5.1): one SOME/IP service for the whole ROS
+/// The ID model: one SOME/IP service for the whole ROS
 /// domain, participants told apart by instance_id. Only the values held here
 /// need declaring in the vsomeip JSON, and all of them are known by the time
 /// rmw_init() returns. Topics get events and eventgroups at runtime, so adding

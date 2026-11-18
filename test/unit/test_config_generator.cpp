@@ -15,7 +15,7 @@
 // Generating the vsomeip JSON configuration.
 //
 // vsomeip starts regardless of what is wrong here; the only symptom is that no
-// SD offer goes out (docs/design.md §3). So the output is inspected directly.
+// SD offer goes out. So the output is inspected directly.
 
 #include <cstdio>
 #include <cstdlib>
@@ -105,7 +105,7 @@ TEST(ConfigGenerator, writes_the_participant_service_with_ports)
 ///
 /// With it, the second process fails init() complaining that another routing
 /// manager is present. Omitted, vsomeip treats the first application to start
-/// as the routing manager (docs/design.md §16(j)).
+/// as the routing manager.
 TEST(ConfigGenerator, omits_routing_unless_asked)
 {
   ::unsetenv("RMW_SOMEIP_CONFIG_FILE");
@@ -132,7 +132,7 @@ TEST(ConfigGenerator, writes_routing_when_the_host_is_given)
 ///
 /// A topic larger than UDP's maximum message length (1416 bytes by default) is
 /// silently dropped unless TP is declared. The declaration lists event IDs
-/// individually, so a fixed number are declared up front (docs/design.md §3).
+/// individually, so a fixed number are declared up front.
 TEST(ConfigGenerator, declares_someip_tp_for_topic_events)
 {
   ::unsetenv("RMW_SOMEIP_CONFIG_FILE");

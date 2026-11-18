@@ -156,7 +156,7 @@ struct PublisherData
   /// SOME/IP IDs this publisher uses.
   ///
   /// Native mode: service and instance are the participant's; event and
-  /// eventgroup are assigned sequentially within it (docs/design.md §5.1).
+  /// eventgroup are assigned sequentially within it.
   /// Extern mode: all four are pinned by someip_mapping.yaml.
   uint16_t service_id {0};
   uint16_t instance_id {0};
@@ -193,7 +193,7 @@ struct PublisherData
   /// Kept even at depth 1, because a field does not help a late subscriber
   /// in the same process: the deliver_locally() path never goes through a
   /// SOME/IP subscription and so has no history of its own. It is replayed
-  /// from here (docs/design.md §21).
+  /// from here.
   size_t history_depth {0};
 
   /// Does a late remote subscriber also need the history replayed?
@@ -313,7 +313,7 @@ struct SubscriptionData : public Waitable
   /// timestamp, but these payloads are plain CDR (AUTOSAR in extern mode) with
   /// nowhere to put a send time. Adding a header would break both CDR
   /// compatibility with Fast DDS and byte compatibility with non-ROS peers, so
-  /// elapsed-since-receipt is used as an approximation (docs/design.md §7).
+  /// elapsed-since-receipt is used as an approximation.
   int64_t lifespan_ns {0};
 
   /// Raise REQUESTED_DEADLINE_MISSED once. Called by the watchdog.

@@ -16,7 +16,7 @@
 //
 // rmw_take_event() does not pop one queued event. Like a DDS StatusCondition
 // it returns the running total plus the delta since the last read and clears
-// the delta. Getting that wrong spins the executor (docs/design.md §15(e)).
+// the delta. Getting that wrong spins the executor.
 
 #include <vector>
 
@@ -257,8 +257,7 @@ TEST(EventData, supported_event_types)
   }
 
   // Message lost is unsupported: detecting it needs a sender-side sequence
-  // number, and changing the wire format would break CDR compatibility
-  // (docs/design.md §21).
+  // number, and changing the wire format would break CDR compatibility.
   EXPECT_FALSE(rmw_someip_cpp::event_type_is_supported(RMW_EVENT_MESSAGE_LOST));
   EXPECT_FALSE(rmw_someip_cpp::event_type_is_supported(RMW_EVENT_INVALID));
 }

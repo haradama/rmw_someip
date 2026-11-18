@@ -161,8 +161,7 @@ bool write_members(
     // Copy primitive arrays in one go.
     //
     // Calling write_single() per element means one call per byte for a byte
-    // array, which makes latency grow linearly with the payload
-    // (docs/design.md §24).
+    // array, which makes latency grow linearly with the payload.
     //
     // Whether elements are contiguous follows from get_const_function being
     // non-null: rosidl leaves it null only for types that are not contiguous

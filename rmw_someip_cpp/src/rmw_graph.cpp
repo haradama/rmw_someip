@@ -15,7 +15,7 @@
 // Graph introspection, all of it queries against GraphCache.
 //
 // SOME/IP-SD carries only numeric IDs, so everything returned here was
-// gathered over the graph channel (docs/design.md §5.2).
+// gathered over the graph channel.
 
 #include <algorithm>
 #include <cstring>

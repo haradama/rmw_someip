@@ -226,7 +226,7 @@ TEST(ServiceData, queues_requests_and_replays_the_backlog)
 ///
 /// rmw does not require exactly one response per request, and rclcpp's
 /// deferred-response pattern calls send_response repeatedly for the same
-/// request_header (docs/design.md §16(p)). Instead of discarding, the map is
+/// request_header. Instead of discarding, the map is
 /// capped and the oldest entries dropped.
 TEST(ServiceData, remembers_requests_and_evicts_the_oldest)
 {

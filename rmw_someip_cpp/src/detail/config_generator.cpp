@@ -177,8 +177,7 @@ ConfigGenerator::Config ConfigGenerator::generate(
      << hex16(id.instance_id) << "\" }\n"
      << "  ],\n"
      // This participant's service. Without a port declared here,
-     // offer_service() reports success but no SD packet goes out
-     // (docs/design.md §3).
+     // offer_service() reports success but no SD packet goes out.
      << "  \"services\": [\n"
      << "    {\n"
      << "      \"service\": \"" << hex16(id.service_id) << "\",\n"

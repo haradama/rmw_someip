@@ -51,8 +51,9 @@ Passes the official ROS 2 conformance suites with no test skipped:
 - `test_communication` (rclcpp / rclpy, all pairs)
 - `test_rclcpp`
 
-The rclcpp/rclpy pairs of `test_communication` still fail intermittently; the
-cause is traced in [docs/design.md](docs/design.md) §19.
+The rclcpp/rclpy pairs of `test_communication` fail intermittently on a
+shutdown race inside rclpy; see
+[docs/design.md](docs/design.md#limitations-and-risks).
 
 On top of those come unit tests for the library internals and a byte-level CDR
 compatibility check against `rmw_fastrtps_cpp`. CI measures line coverage of
@@ -153,8 +154,7 @@ Messages are serialized at runtime through the rosidl introspection
 typesupport, for both C and C++, so any ROS message type works without
 generating per-type code.
 
-See [docs/design.md](docs/design.md) for the full design, including the
-measurements that drove each decision.
+See [docs/design.md](docs/design.md) for the full design.
 
 ## Talking to non-ROS SOME/IP applications
 
@@ -310,8 +310,7 @@ running each test on its own.
 | [rmw_someip_cpp/](rmw_someip_cpp/) | The RMW implementation |
 | [demo/](demo/) | Extern mode demo: a native SOME/IP application and a ROS 2 node, in C++ and Python |
 | [test/](test/) | Unit tests, CDR compatibility, QoS events, loaned messages, smoke test and benchmark |
-| [docs/design.md](docs/design.md) | Design, measurements and the bugs found along the way |
-| [spike/](spike/) | The vsomeip experiments the design is based on |
+| [docs/design.md](docs/design.md) | The design |
 | [docker/](docker/) | Base and test images |
 | [tools/](tools/) | Build and CI scripts |
 

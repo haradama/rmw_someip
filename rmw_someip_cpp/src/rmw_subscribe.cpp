@@ -116,8 +116,7 @@ rmw_ret_t take_impl(
 /// Take one message as a loan.
 ///
 /// The only difference from take_impl is who owns the message; the number of
-/// deserializations is the same. Not shared-memory transport
-/// (docs/design.md §22).
+/// deserializations is the same. Not shared-memory transport.
 rmw_ret_t take_loaned_impl(
   const rmw_subscription_t * subscription,
   void ** loaned_message,
@@ -307,7 +306,7 @@ rmw_create_subscription(
   subscription->implementation_identifier = rmw_someip_cpp::kIdentifier;
   subscription->data = subscription_data;
   subscription->options = *subscription_options;
-  // Loans are offered; not shared-memory transport (design.md §22).
+  // Loans are offered; not shared-memory transport.
   subscription->can_loan_messages = subscription_data->loans.available();
   subscription->is_cft_enabled = false;
   return subscription;

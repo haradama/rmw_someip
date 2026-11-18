@@ -43,7 +43,7 @@ namespace rmw_someip_cpp
 {
 struct NodeData;
 
-/// IDs reserved for the graph channel (docs/design.md §5.1).
+/// IDs reserved for the graph channel.
 /// Topics are numbered sequentially from just after these.
 constexpr uint16_t kGraphEventId = 0x8000;
 constexpr uint16_t kGraphEventgroupId = 0x0001;
@@ -101,7 +101,7 @@ struct rmw_context_impl_s
   /// entities afterwards, since rcl_logging_rosout_fini() removes the rosout
   /// publisher after rmw_shutdown(). Moving the destruction point reopens that
   /// hole, so do not remove the checks along with it. They are unreachable,
-  /// which leaves a gap in coverage (docs/design.md §23).
+  /// which leaves a gap in coverage.
   rmw_someip_cpp::SomeipEndpoint * endpoint() const {return session.get();}
 
   /// The ROS graph received from other participants.

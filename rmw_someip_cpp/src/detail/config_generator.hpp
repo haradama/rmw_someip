@@ -26,7 +26,7 @@ namespace rmw_someip_cpp
 /// Generate vsomeip's JSON configuration at runtime.
 ///
 /// vsomeip expects a static JSON configuration, but measurement
-/// (docs/design.md §3) showed that only the participant's own service,
+/// showed that only the participant's own service,
 /// instance and ports have to be declared there — events and eventgroups can
 /// be assigned at runtime. All of those are known by the time rmw_init() runs.
 ///
@@ -57,7 +57,7 @@ public:
   /// \param[in] localhost_only the ROS_LOCALHOST_ONLY equivalent
   /// \param[in] extern_mapping extern-mode topics. Those the ROS side offers
   ///   need a service and port declared: without the port, offer_service()
-  ///   reports success but no SD offer is ever sent (docs/design.md §3).
+  ///   reports success but no SD offer is ever sent.
   /// \param[out] error message on failure
   static Config generate(
     const ParticipantIdentity & id,

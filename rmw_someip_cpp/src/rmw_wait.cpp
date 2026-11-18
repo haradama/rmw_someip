@@ -256,7 +256,7 @@ rmw_wait(
   // scan below and taken, and the next rmw_wait() then wakes at once with
   // nothing to report. Returning RMW_RET_TIMEOUT there would make an infinite
   // wait time out, which rclcpp treats as fatal, so wait again on the time
-  // that remains (docs/design.md §19).
+  // that remains.
   const bool wait_forever = (wait_timeout == nullptr);
   const auto deadline = std::chrono::steady_clock::now() +
     (wait_forever ?

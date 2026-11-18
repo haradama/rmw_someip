@@ -35,7 +35,7 @@ namespace rmw_someip_cpp
 ///
 /// This is not shared memory. vsomeip's local path is a UNIX domain socket,
 /// so CDR still goes over the wire; what the pool saves is the application
-/// allocating and destroying the message itself (docs/design.md §22). The rmw
+/// allocating and destroying the message itself. The rmw
 /// contract is that the caller borrows memory from the middleware, and says
 /// nothing about how it is transported, so that contract is met.
 ///

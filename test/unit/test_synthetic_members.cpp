@@ -931,7 +931,7 @@ CMember byte_sequence(const char * name)
 }  // namespace
 
 /// Writing a byte array one element at a time makes latency grow with the
-/// payload (docs/design.md §24). This exercises the bulk path.
+/// payload. This exercises the bulk path.
 TEST(SyntheticMembers, a_byte_sequence_is_copied_in_one_go)
 {
   ByteVector message;

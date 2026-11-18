@@ -36,7 +36,7 @@ struct QosIncompatibility
 ///
 /// Unlike DDS, SOME/IP does not refuse to connect on mismatched QoS, so this
 /// is entirely the RMW's job. Without it a BEST_EFFORT publisher and a
-/// RELIABLE subscription would silently connect (docs/design.md §7).
+/// RELIABLE subscription would silently connect.
 ///
 /// Three callers share this rule. Letting them drift would produce
 /// contradictions such as rmw_qos_profile_check_compatible() reporting ERROR

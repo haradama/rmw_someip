@@ -15,7 +15,7 @@
 // Argument checking and QoS resolution.
 //
 // Argument checking is part of the rmw contract, down to which error code each
-// bad argument produces (docs/design.md §15).
+// bad argument produces.
 
 #include "gtest/gtest.h"
 

@@ -187,8 +187,7 @@ private:
 }  // namespace
 
 /// A participant offers exactly one service, publishes the graph channel as a
-/// field, and requests every instance with one request_service
-/// (docs/design.md §5).
+/// field, and requests every instance with one request_service.
 TEST_F(ContextImplTest, start_graph_channel_offers_the_participant_service)
 {
   ASSERT_EQ(1u, fake->offered_services.size());
@@ -284,7 +283,7 @@ TEST_F(ContextImplTest, matching_ignores_a_different_type_on_the_same_topic)
 }
 
 /// TRANSIENT_LOCAL above depth 1 is offered as ET_EVENT, because a field holds
-/// only the latest value (docs/design.md §21).
+/// only the latest value.
 TEST_F(ContextImplTest, transient_local_depth_selects_the_event_type)
 {
   auto shallow = default_qos();

@@ -32,7 +32,7 @@ namespace rmw_someip_cpp
 /// Backing object for rmw_event_t::data.
 ///
 /// SOME/IP has nothing like the DDS status mechanism, so every event is derived
-/// here (docs/design.md §7.1):
+/// here:
 ///   - matched / incompatible QoS: comparing QoS on the graph channel
 ///   - liveliness changed: the graph for AUTOMATIC, arrival gaps for MANUAL_BY_TOPIC
 ///   - deadline / liveliness lost: the context's watchdog watching elapsed time
@@ -74,7 +74,7 @@ struct EventData : public Waitable
   ///
   /// An AUTOMATIC publisher is alive exactly while it is on the graph, so it
   /// only ever appears in the alive count. MANUAL_BY_TOPIC depends on whether
-  /// it wrote within its lease, so it can be not-alive (docs/design.md §21).
+  /// it wrote within its lease, so it can be not-alive.
   void update_liveliness(size_t alive, size_t not_alive)
   {
     rmw_event_callback_t callback = nullptr;

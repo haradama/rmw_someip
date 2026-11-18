@@ -17,7 +17,7 @@
 // Two properties were established by measurement and break byte compatibility
 // with DDS implementations if changed: alignment is measured from after the
 // encapsulation header rather than from the start of the buffer, and a wstring
-// character occupies 4 bytes (docs/design.md §16).
+// character occupies 4 bytes.
 
 #include <cstdint>
 #include <string>

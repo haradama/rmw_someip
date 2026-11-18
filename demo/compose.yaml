@@ -4,7 +4,7 @@ name: rmw-someip-demo
 # with no SOME/IP dependency, in separate containers, talking over SOME/IP.
 #
 # Both need NET_ADMIN and a multicast route: vsomeip treats the route's presence
-# as the condition for starting discovery (docs/design.md §3).
+# as the condition for starting discovery.
 #
 # The ROS side comes in a C++ and a Python version, which do the same thing:
 #
@@ -14,8 +14,7 @@ name: rmw-someip-demo
 # The second file replaces the command rather than adding a container. They
 # cannot run at the same time: an extern-mode `direction: publish` pins its
 # service and instance IDs in someip_mapping.yaml, so two processes offering
-# /vehicle/command would claim the same (service, instance) — the collision
-# described in docs/design.md §20.
+# /vehicle/command would claim the same (service, instance), which collides.
 
 x-common: &common
   image: rmw_someip/base:jazzy

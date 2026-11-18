@@ -300,7 +300,7 @@ rmw_context_fini(rmw_context_t * context)
 // for a caller-supplied allocation to do. Unsupported, as in most RMW
 // implementations; rcl accepts UNSUPPORTED from these. Loaned messages
 // themselves (rmw_borrow_loaned_message and friends) are supported, and
-// can_loan_messages is true (docs/design.md §22).
+// can_loan_messages is true.
 
 rmw_ret_t
 rmw_init_publisher_allocation(

@@ -231,8 +231,8 @@ void SomeipSession::on_availability(uint16_t service, AvailabilityHandler handle
   app_->register_availability_handler(
     service, vsomeip::ANY_INSTANCE,
     [handler](vsomeip::service_t, vsomeip::instance_t instance, bool available) {
-      // An ANY_INSTANCE handler fires once with instance=0xFFFF
-      // (docs/design.md §3). That is not a real participant, so drop it.
+      // An ANY_INSTANCE handler fires once with instance=0xFFFF.
+      // That is not a real participant, so drop it.
       if (instance == vsomeip::ANY_INSTANCE) {
         return;
       }

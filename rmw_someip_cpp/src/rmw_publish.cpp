@@ -129,7 +129,7 @@ rmw_create_publisher(
   publisher->implementation_identifier = rmw_someip_cpp::kIdentifier;
   publisher->data = publisher_data;
   publisher->options = *publisher_options;
-  // Loans are offered. This is not shared-memory transport; see design.md §22.
+  // Loans are offered. This is not shared-memory transport.
   publisher->can_loan_messages = publisher_data->loans.available();
   return publisher;
 }
@@ -311,7 +311,7 @@ rmw_publisher_assert_liveliness(const rmw_publisher_t * publisher)
   //
   // So a zero-length notification is the assertion. CDR always begins with a
   // 4-byte encapsulation header, so zero length cannot collide with an
-  // ordinary message (docs/design.md §21).
+  // ordinary message.
   publisher_data->liveliness.on_activity(rmw_someip_cpp::steady_now_ns());
 
   auto * endpoint = publisher_data->context->endpoint();
@@ -374,7 +374,7 @@ rmw_publisher_get_network_flow_endpoints(
 // Not shared-memory transport. vsomeip's local path is a UNIX domain
 // socket, so CDR still goes over the wire. The rmw contract is that the caller
 // borrows memory from the middleware and says nothing about transport, so
-// taking over the application's allocation satisfies it (design.md §22).
+// taking over the application's allocation satisfies it.
 
 rmw_ret_t
 rmw_borrow_loaned_message(

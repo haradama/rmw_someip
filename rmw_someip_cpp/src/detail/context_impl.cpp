@@ -16,7 +16,7 @@
 //
 // SOME/IP-SD can only carry that a participant exists and where to reach it,
 // so everything ROS-specific — node names, topic names, type names, QoS, the
-// assigned event IDs — travels here instead. See docs/design.md §5.2.
+// assigned event IDs — travels here instead.
 
 #include "detail/context_impl.hpp"
 
@@ -91,9 +91,8 @@ int64_t now_ns()
 ///
 /// Depth above 1 cannot be a field. A field holds one value and has no
 /// notion of history, so those are offered as ET_EVENT and replayed to late
-/// subscribers with notify_one() from the RMW's own buffer (docs/design.md
-/// §21). Sender and subscriber have to agree, so the rule lives in this one
-/// function.
+/// subscribers with notify_one() from the RMW's own buffer.
+/// Sender and subscriber have to agree, so the rule lives in this one function.
 bool is_field_for(uint8_t durability, uint32_t depth)
 {
   const bool transient_local =
@@ -158,7 +157,7 @@ bool rmw_context_impl_s::start_graph_channel(std::string & error)
   const auto own_instance = identity.instance_id;
 
   // Offer this participant's service. It is declared with a port in the
-  // generated JSON, so an SD offer actually goes out (docs/design.md §3).
+  // generated JSON, so an SD offer actually goes out.
   endpoint->offer_service(service_id, own_instance);
 
   // ET_FIELD, so a participant that starts later receives the current graph
@@ -294,8 +293,7 @@ void rmw_context_impl_s::on_graph_message(
     // vsomeip normally rejects the colliding offer during discovery, before
     // anything reaches here; this branch reports the ones that get through.
     // There is no automatic renumbering: instance_id has already been offered,
-    // and redoing discovery would lose more messages than the collision does
-    // (docs/design.md §20).
+    // and redoing discovery would lose more messages than the collision does.
     report_instance_id_collision(info.guid);
     return;
   }
@@ -517,8 +515,7 @@ void rmw_context_impl_s::notify_graph_changed()
       }
       // LIVELINESS_LOST is not raised here. Under AUTOMATIC a publisher is
       // alive as long as its process is, so a running process cannot lose it.
-      // MANUAL_BY_TOPIC expires on time, which the watchdog owns
-      // (docs/design.md §21).
+      // MANUAL_BY_TOPIC expires on time, which the watchdog owns.
     }
     for (auto * subscription : subscriptions) {
       const size_t matched =
@@ -886,7 +883,7 @@ void rmw_context_impl_s::add_native_publisher(
     // Watch for subscriptions so history can be replayed to late subscribers.
     //
     // The handler only queues a request rather than calling notify_one(),
-    // which would send while holding vsomeip's own lock (docs/design.md §21).
+    // which would send while holding vsomeip's own lock.
     endpoint->on_subscription(
       identity.service_id, identity.instance_id, publisher->eventgroup_id,
       [this, publisher](uint16_t client) {

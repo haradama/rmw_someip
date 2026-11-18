@@ -202,7 +202,7 @@ externs:
 
 /// An offered topic without a port is always rejected. Letting it through
 /// makes vsomeip return success from offer_service() while sending no SD
-/// offer: the process starts and is never discovered (docs/design.md §3).
+/// offer: the process starts and is never discovered.
 TEST(ExternMapping, rejects_publish_without_a_port)
 {
   TempYaml yaml(R"(

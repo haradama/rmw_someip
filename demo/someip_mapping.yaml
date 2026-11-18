@@ -30,5 +30,5 @@ externs:
     serialization: someip_native
     reliable: false
     # An offered service must declare a port. Without one, vsomeip returns
-    # success from offer_service() and sends no SD offer (docs/design.md §3).
+    # success from offer_service() and sends no SD offer.
     port: "30510"

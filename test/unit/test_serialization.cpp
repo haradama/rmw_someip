@@ -18,7 +18,7 @@
 // Each type is checked to survive a round trip. Both the C and C++
 // introspections are exercised: the struct layouts match, but string
 // representation and the resize/fetch/assign handling differ, so passing under
-// one says little about the other (docs/design.md §15(b)).
+// one says little about the other.
 
 #include <cstdint>
 #include <string>

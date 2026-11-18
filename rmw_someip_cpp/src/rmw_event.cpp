@@ -16,7 +16,6 @@
 //   matched / incompatible QoS: comparing QoS on the graph channel
 //   liveliness changed: the graph for AUTOMATIC, arrival gaps for MANUAL_BY_TOPIC
 //   deadline / liveliness lost: the context's QoS watchdog, watching elapsed time
-// (docs/design.md §7.1 / §21)
 
 #include "rmw/error_handling.h"
 #include "rmw/event.h"
@@ -43,7 +42,7 @@ rmw_event_type_is_supported(rmw_event_type_t rmw_event_type)
 {
   // True only for the kinds whose status is actually maintained. Message lost
   // is not: detecting it needs a sender-side sequence number, and changing the
-  // wire format would break CDR compatibility (docs/design.md §21).
+  // wire format would break CDR compatibility.
   return rmw_someip_cpp::event_type_is_supported(rmw_event_type);
 }
 }  // extern "C"

@@ -74,9 +74,8 @@ produce the same AUTOSAR bytes.
 
 **They cannot run at the same time.** An extern-mode `direction: publish` pins
 its service and instance IDs in `someip_mapping.yaml`, so two processes offering
-`/vehicle/command` would claim the same (service, instance) — the collision
-described in docs/design.md §20. The second compose file replaces the command
-rather than adding a container, so this cannot happen by accident.
+`/vehicle/command` would claim the same (service, instance). The second compose file replaces the
+command rather than adding a container, so this cannot happen by accident.
 
 ## Checking the wire
 
@@ -121,10 +120,10 @@ code reads as-is.
 
 - Both containers need `NET_ADMIN` and a multicast route. vsomeip treats the
   route's presence as the condition for starting discovery, and a Docker
-  container has none by default (docs/design.md §3).
+  container has none by default.
 - A topic the ROS side offers (`direction: publish`) must declare a `port`.
   Without it vsomeip returns success from `offer_service()` and sends no SD
-  offer (docs/design.md §3).
+  offer.
 - The ROS node here disables its parameter services. Extern mode covers pub/sub
   only; services need native mode's graph channel. In rclcpp that is
   `NodeOptions::start_parameter_services(false)`; in rclpy,

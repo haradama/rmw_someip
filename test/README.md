@@ -25,7 +25,8 @@ BENCH_SIZES="64 65536" BENCH_RMWS=rmw_someip_cpp BENCH_COUNT=5000 \
 The official suites are cloned into `.test_deps` and built on first use
 (`tools/ci/prepare-test-deps.sh`), then reused.
 
-The results, and the bug the benchmark found, are in docs/design.md §24.
+What the numbers show is in
+[docs/design.md](../docs/design.md#performance).
 
 What follows is how to run each test on its own.
 
@@ -86,9 +87,8 @@ String(short)                someip=11B fastrtps=11B  OK
 A smoke test for the pub/sub path.
 
 An rclcpp Node creates six parameter services and `~/get_type_description` by
-default, so `demo_nodes_cpp` cannot start until services are implemented. This
-test turns them off through `NodeOptions` and a parameter override, leaving
-pub/sub on its own.
+default. This test turns them off through `NodeOptions` and a parameter
+override, so that it exercises pub/sub on its own.
 
 ```bash
 ./tools/build_in_docker.sh   # build rmw_someip_cpp first
@@ -109,11 +109,12 @@ docker run --rm --network host --privileged rmw_someip/base:jazzy \
   tcpdump -i "$BR" -nn -X 'not port 30490 and not igmp and greater 80'
 ```
 
-The frames to expect are in docs/design.md §3.
+The frame to expect is in
+[docs/design.md](../docs/design.md#on-the-wire).
 
 ## Standard nodes
 
-From phase 1d onwards an unmodified `demo_nodes_cpp` works.
+An unmodified `demo_nodes_cpp` works, as does the `ros2` CLI.
 
 ```bash
 docker compose -f test/pubsub_smoke/compose.yaml up
@@ -167,15 +168,14 @@ HOME has to be writable, because rcl creates a log directory there. Pairs of
 different transports (fastrtps against someip) cannot communicate by
 construction and are excluded.
 
-Results and the bugs these suites found are in docs/design.md §15 and §16.
-
 `test_deadline` and `test_automatic_liveliness_changed` are **silently skipped**
 when `rmw_event_type_is_supported()` returns false. Confirm they actually ran
 from the ctest duration (several seconds each) or from `result="completed"` in the
-gtest XML. See docs/design.md §17.
+gtest XML.
 
 `test_communication`'s rclcpp/rclpy pairs fail intermittently, on a shutdown
-race inside rclpy (docs/design.md §19).
+race inside rclpy
+([docs/design.md](../docs/design.md#limitations-and-risks)).
 
 **A single clean run does not mean it is stable.** To judge a regression, run
 the affected test repeatedly and compare failure rates.
@@ -183,8 +183,8 @@ the affected test repeatedly and compare failure rates.
 ## qos_events
 
 The QoS features the official suites do not cover: TRANSIENT_LOCAL above depth
-1, MANUAL_BY_TOPIC liveliness, and incompatible-QoS events. See docs/design.md
-§21.
+1, MANUAL_BY_TOPIC liveliness, and incompatible-QoS events. How they work is in
+[docs/design.md](../docs/design.md#qos).
 
 ```bash
 docker run --rm --cap-add NET_ADMIN --user "$(id -u):$(id -g)" -e HOME=/tmp/rosuser \
@@ -290,7 +290,8 @@ is out of reach that way. `alloc_hooks.cpp` defines `operator new(nothrow)` and
 library's, so no `LD_PRELOAD` is needed.
 
 `malloc` itself is not replaced: rosidl throws from a `noexcept` context when
-allocation fails, which ends in `std::terminate`. See docs/design.md §23.
+allocation fails, which ends in `std::terminate`, and
+another library cannot be made OOM-tolerant from here.
 
 ### Passing a malformed type descriptor
 
@@ -310,5 +311,12 @@ Only the actual SOME/IP-format traffic needs one.
 
 ### What is not covered
 
-What remains uncovered, and what reaching it would take, is in
-[`docs/design.md` §23](../docs/design.md).
+| Kind | What reaching it would take |
+|---|---|
+| Extern mode on the wire, the SOME/IP-format traffic itself | A non-ROS peer; a unit test gets as far as the descriptor |
+| `endpoint() == nullptr`, and the `break` arms in `rmw_take_event` | Unreachable defences, kept deliberately (see [Context lifecycle](../docs/design.md#context-lifecycle)) |
+| vsomeip and OS dependencies: startup failure in `someip_session.cpp`, `getifaddrs()` failing, a configuration file that cannot be written, port exhaustion | Substituting `vsomeip::runtime` and `application` themselves, and the syscalls |
+| Later failures in `rmw_init()`: creating the SomeipSession, starting the graph channel | As above |
+| Argument checks behind other argument checks, such as `rmw_validate_*()` itself failing | Unreachable unless the earlier check is removed |
+| Allocation failure where the allocator is fixed, as in `rmw_get_node_names()`, and string assignment failing | Substituting `malloc`, which is ruled out above |
+| Continuation lines gcov attributes to a multi-line expression | — |
