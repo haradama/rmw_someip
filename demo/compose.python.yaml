@@ -1,0 +1,19 @@
+# Overrides demo/compose.yaml to run the Python node instead of the C++ one.
+#
+#   docker compose -f demo/compose.yaml -f demo/compose.python.yaml up
+#
+# rclpy reaches the RMW through the C introspection typesupport where rclcpp
+# uses the C++ one, and both produce the same AUTOSAR bytes on the wire. The
+# native SOME/IP application cannot tell which one it is talking to.
+
+services:
+  ros2_app:
+    container_name: someip_ros2_py_app
+    command:
+      - bash
+      - -lc
+      - |
+        ip route add 224.0.0.0/4 dev eth0
+        source /opt/ros/jazzy/setup.bash
+        source /ws/install/setup.bash
+        exec ros2 run rmw_someip_demo_py_app vehicle_node
