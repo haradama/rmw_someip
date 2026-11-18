@@ -1,0 +1,197 @@
+name: CI
+
+# The steps themselves live in tools/ci/*.sh; this file only decides which
+# container runs them, in what order, and what is cached. Locally the same
+# scripts run through `./tools/ci/in-docker.sh <lint|unit|conformance|coverage>`.
+#
+# Note: on a pull request from a fork, GITHUB_TOKEN is read-only, the GHCR push
+# fails and the image job with it. To run fork PRs, skip that job and build the
+# image in each of the others instead.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ROS_DISTRO: jazzy
+
+jobs:
+  # Building vsomeip from source takes more than ten minutes, so the image is
+  # tagged with a hash of the Dockerfiles and kept in GHCR; it is only rebuilt
+  # when they change.
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      ref: ${{ steps.meta.outputs.ref }}
+    steps:
+      # The ROS image and the buildx cache take several GB, so clear out what
+      # the runner ships with and this does not use.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - id: meta
+        run: |
+          hash=$(cat docker/base.Dockerfile docker/test.Dockerfile | sha256sum | cut -c1-12)
+          registry="ghcr.io/${GITHUB_REPOSITORY,,}/test"
+          echo "ref=${registry}:${ROS_DISTRO}-${hash}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip the build when the image already exists
+        id: exists
+        run: |
+          if docker manifest inspect "${{ steps.meta.outputs.ref }}" > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.exists.outputs.found == 'false'
+
+      # Two stages, base then test. The test image's FROM refers to base by its
+      # local tag, so base is loaded into the daemon first.
+      - name: Build the base image
+        if: steps.exists.outputs.found == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/base.Dockerfile
+          tags: rmw_someip/base:${{ env.ROS_DISTRO }}
+          load: true
+          cache-from: type=gha,scope=base
+          cache-to: type=gha,scope=base,mode=max
+
+      - name: Build and push the test image
+        if: steps.exists.outputs.found == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/test.Dockerfile
+          tags: ${{ steps.meta.outputs.ref }}
+          push: true
+          cache-from: type=gha,scope=test
+          cache-to: type=gha,scope=test,mode=max
+
+  lint:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: ./tools/ci/in-docker.sh lint
+        env:
+          RMW_SOMEIP_IMAGE: ${{ needs.image.outputs.ref }}
+
+  unit:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: ./tools/ci/in-docker.sh unit
+        env:
+          RMW_SOMEIP_IMAGE: ${{ needs.image.outputs.ref }}
+
+  conformance:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Nothing in the official suites depends on rmw_someip_cpp, so the build
+      # is reusable as long as the image is the same. This is most of the runtime.
+      - uses: actions/cache@v4
+        with:
+          path: .test_deps
+          key: test-deps-${{ needs.image.outputs.ref }}-${{ hashFiles('tools/ci/prepare-test-deps.sh') }}
+
+      - run: ./tools/ci/in-docker.sh conformance
+        env:
+          RMW_SOMEIP_IMAGE: ${{ needs.image.outputs.ref }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: conformance-logs
+          path: |
+            .test_deps/log
+            log
+          retention-days: 7
+
+  coverage:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/cache@v4
+        with:
+          path: .test_deps
+          key: test-deps-${{ needs.image.outputs.ref }}-${{ hashFiles('tools/ci/prepare-test-deps.sh') }}
+
+      - run: ./tools/ci/in-docker.sh coverage
+        env:
+          RMW_SOMEIP_IMAGE: ${{ needs.image.outputs.ref }}
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo '### Line coverage'
+            echo '```'
+            tail -n 4 build/coverage.txt 2>/dev/null || echo '(no report was produced)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: |
+            build/coverage.txt
+            build/coverage.csv
+            build/coverage/
+          retention-days: 30
