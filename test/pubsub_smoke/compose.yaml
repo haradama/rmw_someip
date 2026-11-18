@@ -1,0 +1,23 @@
+name: rmw-someip-pubsub
+x-common: &common
+  image: rmw_someip/base:jazzy
+  volumes: [ "../..:/ws" ]
+  cap_add: [ NET_ADMIN ]
+  environment:
+    RMW_IMPLEMENTATION: rmw_someip_cpp
+    RMW_SOMEIP_LOG_LEVEL: warning
+
+services:
+  talker:
+    <<: *common
+    networks: { net: { ipv4_address: 172.33.0.11 } }
+    command: ["bash","-lc","ip route add 224.0.0.0/4 dev eth0; source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && exec ros2 run pubsub_smoke pubsub_smoke talker"]
+  listener:
+    <<: *common
+    networks: { net: { ipv4_address: 172.33.0.12 } }
+    command: ["bash","-lc","ip route add 224.0.0.0/4 dev eth0; source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && exec ros2 run pubsub_smoke pubsub_smoke listener 5"]
+
+networks:
+  net:
+    driver: bridge
+    ipam: { config: [ { subnet: 172.33.0.0/24 } ] }
