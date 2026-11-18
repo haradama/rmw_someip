@@ -1,0 +1,132 @@
+# Extern mode demo
+
+**A native SOME/IP application with no ROS dependency and a ROS 2 application
+with no SOME/IP dependency, in separate Docker containers, talking to each other
+over SOME/IP in both directions.**
+
+```
+┌────────────────────────────┐          ┌────────────────────────────┐
+│ container: someip_ecu       │          │ container: someip_ros2_app  │
+│                             │          │                             │
+│  someip_native_app/main.cpp │          │  ros2_app/  or  py_app/     │
+│  depends on ROS:     none   │          │  depends on SOME/IP: none   │
+│  (confirmed with ldd)       │          │  (ordinary rclcpp / rclpy)  │
+│                             │          │                             │
+│  offer  0x1234 ──/vehicle/status──▶  subscribe                       │
+│  subscribe ◀──/vehicle/command──── offer 0x1235                      │
+│                             │          │                             │
+│  172.40.0.11                │          │  172.40.0.12                │
+└──────────────┬─────────────┘          └──────────────┬─────────────┘
+               └───────── net (bridge) ─────────────────┘
+                  SOME/IP-SD 224.244.224.245:30490
+```
+
+Nothing in the ROS 2 source mentions a SOME/IP ID or a byte layout. The ID
+mapping and the serialization format are handled by
+[`someip_mapping.yaml`](someip_mapping.yaml) and the RMW. **That is the
+difference from a bridge node**, which would be both a bottleneck and a single
+point of failure.
+
+## Running it
+
+```bash
+# Base image, if it does not exist yet
+docker build -f docker/base.Dockerfile -t rmw_someip/base:jazzy .
+
+# The RMW and the demo's ROS packages
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/ws rmw_someip/base:jazzy bash -lc '
+  source /opt/ros/jazzy/setup.bash && cd /ws && colcon build'
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/ws rmw_someip/base:jazzy bash -lc '
+  source /opt/ros/jazzy/setup.bash && cd /ws && colcon build --base-paths demo'
+
+# The native SOME/IP application, outside the ROS workspace (COLCON_IGNORE)
+./tools/build_in_docker.sh demo/someip_native_app
+
+docker compose -f demo/compose.yaml up
+```
+
+Expected output:
+
+```
+someip_ecu       | [someip_ecu] offer /vehicle/status (service 0x1234 / event 0x8001)
+someip_ecu       | [someip_ecu] SEND /vehicle/status: speed=41.0 ... mode=NORMAL  (24 bytes)
+someip_ros2_app  | [vehicle_node]: RECV /vehicle/status  t=100ms speed=41.0 steering=-9.0 gear=2 mode='NORMAL'
+someip_ros2_app  | [vehicle_node]: SEND /vehicle/command target_speed=55.5 gear_request=3
+someip_ecu       | [someip_ecu] RECV /vehicle/command from ROS 2: target_speed=55.5 gear_request=3
+```
+
+The payload varies between 21, 24 and 23 bytes because `mode` (ECO, NORMAL,
+SPORT) is a variable-length string.
+
+## The same node in Python
+
+[`py_app/`](py_app/) is the same node written with rclpy. A second compose file
+swaps it in:
+
+```bash
+docker compose -f demo/compose.yaml -f demo/compose.python.yaml up
+```
+
+The output is identical apart from the container name, and the native SOME/IP
+application cannot tell which one it is talking to — rclpy reaches the RMW
+through the C introspection typesupport where rclcpp uses the C++ one, and both
+produce the same AUTOSAR bytes.
+
+**They cannot run at the same time.** An extern-mode `direction: publish` pins
+its service and instance IDs in `someip_mapping.yaml`, so two processes offering
+`/vehicle/command` would claim the same (service, instance) — the collision
+described in docs/design.md §20. The second compose file replaces the command
+rather than adding a container, so this cannot happen by accident.
+
+## Checking the wire
+
+The ROS log alone does not show whether the bytes really follow AUTOSAR.
+
+```bash
+docker compose -f demo/compose.yaml up -d
+BR="br-$(docker network inspect rmw-someip-demo_net -f '{{.Id}}' | cut -c1-12)"
+docker run --rm --network host --privileged rmw_someip/base:jazzy \
+  tcpdump -i "$BR" -nn -X 'udp and src 172.40.0.11 and not port 30490'
+```
+
+A captured `/vehicle/status` frame:
+
+```
+1234 8001    Message ID: service 0x1234, event 0x8001
+0000 001f    Length 31
+0000 0005    Request ID: client 0x0000, session 0x0005
+01 00 02 00  ProtoVer 1, IfaceVer 0, MsgType 0x02 NOTIFICATION, RetCode E_OK
+--- payload, AUTOSAR SOME/IP Transformer ---
+0000 01f4    timestamp_ms = 500          big endian
+4234 0000    speed_kph = 45.0f           big-endian IEEE 754
+c0a0 0000    steering_angle_deg = -5.0f
+06           gear = 6                    follows immediately, no padding
+0000 0006    mode length = 6, including the NUL
+5350 4f52 5400   "SPORT\0"
+```
+
+Big endian, packed, length-prefixed strings: a layout a real ECU's generated
+code reads as-is.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| [`someip_mapping.yaml`](someip_mapping.yaml) | Topic name to SOME/IP IDs and serialization format. Named by `RMW_SOMEIP_MAPPING_FILE` |
+| [`config/someip_ecu.json`](config/someip_ecu.json) | vsomeip configuration for the native application; the ROS side's is generated by the RMW |
+| [`rmw_someip_demo_msgs/`](rmw_someip_demo_msgs/) | The `.msg` definitions. The native application hand-assembles the same bytes |
+| [`ros2_app/`](ros2_app/), [`py_app/`](py_app/) | The ROS side, in C++ and in Python |
+
+## Things to know
+
+- Both containers need `NET_ADMIN` and a multicast route. vsomeip treats the
+  route's presence as the condition for starting discovery, and a Docker
+  container has none by default (docs/design.md §3).
+- A topic the ROS side offers (`direction: publish`) must declare a `port`.
+  Without it vsomeip returns success from `offer_service()` and sends no SD
+  offer (docs/design.md §3).
+- The ROS node here disables its parameter services. Extern mode covers pub/sub
+  only; services need native mode's graph channel. In rclcpp that is
+  `NodeOptions::start_parameter_services(false)`; in rclpy,
+  `Node(start_parameter_services=False)`. `~/get_type_description` is a node
+  parameter in both.

@@ -1,0 +1,34 @@
+# Extern-mode configuration, named by RMW_SOMEIP_MAPPING_FILE.
+#
+# Topics listed here bypass the graph channel and communicate with pinned IDs
+# and AUTOSAR SOME/IP Transformer serialization. The peer knows nothing about
+# ROS, so both the IDs and the payload format have to be agreed in advance — in
+# production this is what would be generated from FIDL or ARXML.
+#
+# direction is from the ROS side:
+#   subscribe = the peer offers, ROS receives
+#   publish   = ROS offers, the peer receives; a port is required
+
+externs:
+  /vehicle/status:
+    direction: subscribe
+    service_id: "0x1234"
+    instance_id: "0x0001"
+    event_id: "0x8001"
+    eventgroup_id: "0x0001"
+    type: rmw_someip_demo_msgs/msg/VehicleStatus
+    serialization: someip_native
+    reliable: false
+
+  /vehicle/command:
+    direction: publish
+    service_id: "0x1235"
+    instance_id: "0x0001"
+    event_id: "0x8001"
+    eventgroup_id: "0x0001"
+    type: rmw_someip_demo_msgs/msg/VehicleCommand
+    serialization: someip_native
+    reliable: false
+    # An offered service must declare a port. Without one, vsomeip returns
+    # success from offer_service() and sends no SD offer (docs/design.md §3).
+    port: "30510"

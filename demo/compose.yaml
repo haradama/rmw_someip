@@ -1,0 +1,62 @@
+name: rmw-someip-demo
+#
+# A native SOME/IP application with no ROS dependency and a ROS 2 application
+# with no SOME/IP dependency, in separate containers, talking over SOME/IP.
+#
+# Both need NET_ADMIN and a multicast route: vsomeip treats the route's presence
+# as the condition for starting discovery (docs/design.md §3).
+#
+# The ROS side comes in a C++ and a Python version, which do the same thing:
+#
+#   docker compose -f demo/compose.yaml up                             # C++
+#   docker compose -f demo/compose.yaml -f demo/compose.python.yaml up # Python
+#
+# The second file replaces the command rather than adding a container. They
+# cannot run at the same time: an extern-mode `direction: publish` pins its
+# service and instance IDs in someip_mapping.yaml, so two processes offering
+# /vehicle/command would claim the same (service, instance) — the collision
+# described in docs/design.md §20.
+
+x-common: &common
+  image: rmw_someip/base:jazzy
+  volumes: [ "..:/ws" ]
+  cap_add: [ NET_ADMIN ]
+
+services:
+  # A SOME/IP node that knows nothing about ROS, standing in for an ECU.
+  someip_ecu:
+    <<: *common
+    container_name: someip_ecu
+    networks: { net: { ipv4_address: 172.40.0.11 } }
+    environment:
+      VSOMEIP_CONFIGURATION: /ws/demo/config/someip_ecu.json
+      VSOMEIP_APPLICATION_NAME: someip_ecu
+    command:
+      - bash
+      - -lc
+      - |
+        ip route add 224.0.0.0/4 dev eth0
+        exec /ws/demo/someip_native_app/build/someip_ecu
+
+  # A ROS 2 node that knows nothing about SOME/IP.
+  ros2_app:
+    <<: *common
+    container_name: someip_ros2_app
+    networks: { net: { ipv4_address: 172.40.0.12 } }
+    environment:
+      RMW_IMPLEMENTATION: rmw_someip_cpp
+      RMW_SOMEIP_MAPPING_FILE: /ws/demo/someip_mapping.yaml
+      RMW_SOMEIP_LOG_LEVEL: warning
+    command:
+      - bash
+      - -lc
+      - |
+        ip route add 224.0.0.0/4 dev eth0
+        source /opt/ros/jazzy/setup.bash
+        source /ws/install/setup.bash
+        exec ros2 run rmw_someip_demo_ros2_app vehicle_node
+
+networks:
+  net:
+    driver: bridge
+    ipam: { config: [ { subnet: 172.40.0.0/24 } ] }
